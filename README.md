@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Shell Script](https://img.shields.io/badge/Script-Bash-green.svg)](https://www.gnu.org/software/bash/)
-[![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20macOS-blue.svg)](https://github.com/username/config-files)
+[![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20macOS-blue.svg)](https://github.com/EvgeniiKlepilin/config-files)
 [![Tmux](https://img.shields.io/badge/Tmux-Configuration-orange.svg)](https://github.com/tmux/tmux)
 [![Zsh](https://img.shields.io/badge/Zsh-Configuration-red.svg)](https://www.zsh.org/)
 
@@ -33,12 +33,12 @@ Zsh shell configuration file featuring:
 
 ### One-line installation:
 ```bash
-curl -fsSL https://raw.githubusercontent.com/username/config-files/main/setup.sh | bash
+curl -fsSL https://raw.githubusercontent.com/EvgeniiKlepilin/config-files/main/setup.sh | bash
 ```
 
 ### Manual download and run:
 ```bash
-curl -fsSL https://raw.githubusercontent.com/username/config-files/main/setup.sh -o setup.sh
+curl -fsSL https://raw.githubusercontent.com/EvgeniiKlepilin/config-files/main/setup.sh -o setup.sh
 chmod +x setup.sh
 ./setup.sh
 ```
@@ -113,7 +113,7 @@ If you prefer to install files manually:
 
 ```bash
 # Clone the repository
-git clone https://github.com/username/config-files.git
+git clone https://github.com/EvgeniiKlepilin/config-files.git
 cd config-files
 
 # Copy configuration files
