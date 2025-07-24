@@ -150,8 +150,8 @@ main() {
     echo "╔═══════════════════════════════════════════════════════════╗"
     echo "║                 Configuration Setup Script                ║"
     echo "║                                                           ║"
-    echo "║  This script will install .tmux.conf and .zshrc files    ║"
-    echo "║  to your home directory from the config-files repository ║"
+    echo "║  This script will install .tmux.conf and .zshrc files     ║"
+    echo "║  to your home directory from the config-files repository  ║"
     echo "╚═══════════════════════════════════════════════════════════╝"
     echo -e "${NC}"
     echo
