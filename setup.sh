@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Configuration Setup Script
-# Downloads and installs .tmux.conf and .zshrc configuration files
+# Downloads and installs configuration files including .tmux.conf, .zshrc, .taskrc, and neofetch config
 # Author: Evgenii Klepilin
 # Repository: https://github.com/EvgeniiKlepilin/config-files
 
@@ -17,7 +17,14 @@ NC='\033[0m' # No Color
 # Configuration
 REPO_BASE_URL="https://raw.githubusercontent.com/EvgeniiKlepilin/config-files/main"
 HOME_DIR="$HOME"
-CONFIG_FILES=(".tmux.conf" ".zshrc")
+
+# Configuration files with their destination paths
+declare -A CONFIG_FILES=(
+    [".tmux.conf"]="$HOME/.tmux.conf"
+    [".zshrc"]="$HOME/.zshrc"
+    [".taskrc"]="$HOME/.taskrc"
+    ["config.conf"]="$HOME/.config/neofetch/config.conf"
+)
 
 # Function to print colored output
 print_status() {
@@ -54,6 +61,21 @@ ask_confirmation() {
     fi
 }
 
+# Function to ask if user wants to install a specific file
+ask_install_confirmation() {
+    local filename="$1"
+    local description="$2"
+    echo -e "${BLUE}Install ${filename}?${NC}"
+    echo "  Description: $description"
+    read -p "Do you want to install this file? (Y/n): " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Nn]$ ]]; then
+        return 1
+    else
+        return 0
+    fi
+}
+
 # Function to backup existing file
 backup_file() {
     local file="$1"
@@ -62,20 +84,62 @@ backup_file() {
     print_status "Backed up existing file to $backup_file"
 }
 
+# Function to create directory if it doesn't exist
+ensure_directory() {
+    local dir="$1"
+    if [[ ! -d "$dir" ]]; then
+        print_status "Creating directory: $dir"
+        mkdir -p "$dir"
+    fi
+}
+
+# Function to get file description
+get_file_description() {
+    local filename="$1"
+    case "$filename" in
+        ".tmux.conf")
+            echo "Tmux terminal multiplexer configuration with custom key bindings and styling"
+            ;;
+        ".zshrc")
+            echo "Zsh shell configuration with Oh My Zsh, Powerlevel10k theme, and neofetch"
+            ;;
+        ".taskrc")
+            echo "Taskwarrior task management configuration file"
+            ;;
+        "config.conf")
+            echo "Neofetch system information display configuration"
+            ;;
+        *)
+            echo "Configuration file"
+            ;;
+    esac
+}
+
 # Function to download and install a configuration file
 install_config_file() {
     local filename="$1"
+    local dest_path="$2"
     local source_url="${REPO_BASE_URL}/${filename}"
-    local dest_path="${HOME_DIR}/${filename}"
+
+    # Ask user if they want to install this file
+    local description=$(get_file_description "$filename")
+    if ! ask_install_confirmation "$filename" "$description"; then
+        print_warning "Skipping $filename"
+        return 0
+    fi
 
     print_status "Processing $filename..."
+
+    # Ensure destination directory exists
+    local dest_dir=$(dirname "$dest_path")
+    ensure_directory "$dest_dir"
 
     # Check if file already exists
     if [[ -f "$dest_path" ]]; then
         if ask_confirmation "$dest_path"; then
             backup_file "$dest_path"
         else
-            print_warning "Skipping $filename"
+            print_warning "Skipping $filename (file exists, user chose not to overwrite)"
             return 0
         fi
     fi
@@ -84,14 +148,14 @@ install_config_file() {
     print_status "Downloading $filename from repository..."
     if command_exists curl; then
         if curl -fsSL "$source_url" -o "$dest_path"; then
-            print_success "Successfully installed $filename"
+            print_success "Successfully installed $filename to $dest_path"
         else
             print_error "Failed to download $filename"
             return 1
         fi
     elif command_exists wget; then
         if wget -q "$source_url" -O "$dest_path"; then
-            print_success "Successfully installed $filename"
+            print_success "Successfully installed $filename to $dest_path"
         else
             print_error "Failed to download $filename"
             return 1
@@ -122,26 +186,50 @@ check_prerequisites() {
 # Function to provide post-installation instructions
 show_post_install_instructions() {
     echo
-    print_success "Configuration files have been installed successfully!"
+    print_success "Configuration files installation completed!"
     echo
-    print_status "Next steps:"
-    echo "  1. For tmux configuration to take effect:"
-    echo "     - Start a new tmux session or run: tmux source-file ~/.tmux.conf"
+    print_status "Post-installation instructions:"
     echo
-    echo "  2. For zsh configuration to take effect:"
-    echo "     - Make sure you have Oh My Zsh installed: https://ohmyz.sh/"
-    echo "     - Install Powerlevel10k theme: https://github.com/romkatv/powerlevel10k"
-    echo "     - Install neofetch for the system info banner"
-    echo "     - Restart your terminal or run: source ~/.zshrc"
+    echo "📁 TMUX Configuration (.tmux.conf):"
+    echo "   • Start a new tmux session or reload: tmux source-file ~/.tmux.conf"
+    echo "   • Key bindings: Prefix changed to Ctrl-a, | and - for pane splitting"
     echo
-    echo "  3. Dependencies that may need to be installed:"
-    echo "     - zsh (if not already your default shell)"
-    echo "     - tmux"
-    echo "     - Oh My Zsh framework"
-    echo "     - Powerlevel10k theme"
-    echo "     - neofetch"
+    echo "🐚 ZSH Configuration (.zshrc):"
+    echo "   • Install Oh My Zsh: https://ohmyz.sh/"
+    echo "   • Install Powerlevel10k: git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ~/powerlevel10k"
+    echo "   • Install neofetch for system info banner"
+    echo "   • Restart terminal or run: source ~/.zshrc"
     echo
-    print_status "Enjoy your new configuration! 🚀"
+    echo "📋 Taskwarrior Configuration (.taskrc):"
+    echo "   • Install taskwarrior: apt install taskwarrior (Ubuntu/Debian) or brew install task (macOS)"
+    echo "   • Configuration will be automatically loaded when you run 'task' command"
+    echo
+    echo "🎨 Neofetch Configuration (config.conf):"
+    echo "   • Install neofetch: apt install neofetch (Ubuntu/Debian) or brew install neofetch (macOS)"
+    echo "   • Run 'neofetch' to see your system information with custom styling"
+    echo
+    echo "🔧 General Dependencies:"
+    echo "   • zsh (shell)"
+    echo "   • tmux (terminal multiplexer)"
+    echo "   • taskwarrior (task management)"
+    echo "   • neofetch (system information)"
+    echo "   • git (version control)"
+    echo
+    print_status "Enjoy your enhanced development environment! 🚀"
+    echo
+    print_status "For more information, visit: https://github.com/EvgeniiKlepilin/config-files"
+}
+
+# Function to show available files
+show_available_files() {
+    echo
+    print_status "Available configuration files:"
+    echo
+    for filename in "${!CONFIG_FILES[@]}"; do
+        local description=$(get_file_description "$filename")
+        echo "  📄 $filename - $description"
+    done
+    echo
 }
 
 # Main execution
@@ -150,28 +238,55 @@ main() {
     echo "╔═══════════════════════════════════════════════════════════╗"
     echo "║                 Configuration Setup Script                ║"
     echo "║                                                           ║"
-    echo "║  This script will install .tmux.conf and .zshrc files     ║"
-    echo "║  to your home directory from the config-files repository  ║"
+    echo "║  This script will install configuration files from the    ║"
+    echo "║  config-files repository to your system                   ║"
     echo "╚═══════════════════════════════════════════════════════════╝"
     echo -e "${NC}"
-    echo
+
+    show_available_files
 
     check_prerequisites
 
+    echo
+    print_status "Starting installation process..."
+    echo "You will be prompted for each file individually."
+    echo
+
     # Install each configuration file
     local failed_installs=0
-    for config_file in "${CONFIG_FILES[@]}"; do
-        if ! install_config_file "$config_file"; then
+    local installed_count=0
+    local skipped_count=0
+
+    for filename in "${!CONFIG_FILES[@]}"; do
+        local dest_path="${CONFIG_FILES[$filename]}"
+        echo "----------------------------------------"
+        if install_config_file "$filename" "$dest_path"; then
+            if [[ -f "$dest_path" ]]; then
+                ((installed_count++))
+            else
+                ((skipped_count++))
+            fi
+        else
             ((failed_installs++))
         fi
         echo
     done
 
-    # Show results
+    # Show results summary
+    echo "========================================"
+    print_status "Installation Summary:"
+    echo "  ✅ Successfully installed: $installed_count file(s)"
+    echo "  ⏭️  Skipped: $skipped_count file(s)"
+    if [[ $failed_installs -gt 0 ]]; then
+        echo "  ❌ Failed: $failed_installs file(s)"
+    fi
+    echo
+
     if [[ $failed_installs -eq 0 ]]; then
         show_post_install_instructions
     else
         print_error "$failed_installs file(s) failed to install"
+        print_status "Check the errors above and try running the script again."
         exit 1
     fi
 }
