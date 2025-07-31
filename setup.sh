@@ -18,12 +18,13 @@ NC='\033[0m' # No Color
 REPO_BASE_URL="https://raw.githubusercontent.com/EvgeniiKlepilin/config-files/main"
 HOME_DIR="$HOME"
 
-# Configuration files with their destination paths
-declare -A CONFIG_FILES=(
-    [".tmux.conf"]="$HOME/.tmux.conf"
-    [".zshrc"]="$HOME/.zshrc"
-    [".taskrc"]="$HOME/.taskrc"
-    ["config.conf"]="$HOME/.config/neofetch/config.conf"
+# Configuration files arrays
+CONFIG_FILENAMES=(".tmux.conf" ".zshrc" ".taskrc" "config.conf")
+CONFIG_DESTINATIONS=(
+    "$HOME/.tmux.conf"
+    "$HOME/.zshrc" 
+    "$HOME/.taskrc"
+    "$HOME/.config/neofetch/config.conf"
 )
 
 # Function to print colored output
@@ -76,7 +77,27 @@ ask_install_confirmation() {
     fi
 }
 
-# Function to backup existing file
+# Function to get destination path for a filename
+get_destination_path() {
+    local filename="$1"
+    case "$filename" in
+        ".tmux.conf")
+            echo "$HOME/.tmux.conf"
+            ;;
+        ".zshrc")
+            echo "$HOME/.zshrc"
+            ;;
+        ".taskrc")
+            echo "$HOME/.taskrc"
+            ;;
+        "config.conf")
+            echo "$HOME/.config/neofetch/config.conf"
+            ;;
+        *)
+            echo "$HOME/$filename"
+            ;;
+    esac
+}
 backup_file() {
     local file="$1"
     local backup_file="${file}.backup.$(date +%Y%m%d_%H%M%S)"
@@ -118,13 +139,14 @@ get_file_description() {
 # Function to download and install a configuration file
 install_config_file() {
     local filename="$1"
-    local dest_path="$2"
+    local dest_path=$(get_destination_path "$filename")
     local source_url="${REPO_BASE_URL}/${filename}"
 
     # Ask user if they want to install this file
     local description=$(get_file_description "$filename")
     if ! ask_install_confirmation "$filename" "$description"; then
         print_warning "Skipping $filename"
+        ((skipped_count++))
         return 0
     fi
 
@@ -140,6 +162,7 @@ install_config_file() {
             backup_file "$dest_path"
         else
             print_warning "Skipping $filename (file exists, user chose not to overwrite)"
+            ((skipped_count++))
             return 0
         fi
     fi
@@ -225,11 +248,13 @@ show_available_files() {
     echo
     print_status "Available configuration files:"
     echo
-    for filename in "${!CONFIG_FILES[@]}"; do
+    for filename in "${CONFIG_FILENAMES[@]}"; do
         local description=$(get_file_description "$filename")
-        echo "  📄 $filename - $description"
+        local dest_path=$(get_destination_path "$filename")
+        echo "  📄 $filename -> $dest_path"
+        echo "     $description"
+        echo
     done
-    echo
 }
 
 # Main execution
@@ -257,10 +282,10 @@ main() {
     local installed_count=0
     local skipped_count=0
 
-    for filename in "${!CONFIG_FILES[@]}"; do
-        local dest_path="${CONFIG_FILES[$filename]}"
+    for filename in "${CONFIG_FILENAMES[@]}"; do
         echo "----------------------------------------"
-        if install_config_file "$filename" "$dest_path"; then
+        if install_config_file "$filename"; then
+            local dest_path=$(get_destination_path "$filename")
             if [[ -f "$dest_path" ]]; then
                 ((installed_count++))
             else
